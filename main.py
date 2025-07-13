@@ -19,6 +19,10 @@ from telegram.ext import Application, ExtBot, JobQueue
 from typing import Dict, Any
 
 
+# ⛔️ Ограничить доступ к боту
+only_allowed = filters.User(config.ALLOWED_USERS)
+
+
 async def error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, context.error)
@@ -34,39 +38,39 @@ def add_handlers(
         JobQueue[ContextTypes.DEFAULT_TYPE],
     ]
 ) -> None:
-    # conversations (must be declared first, not sure why)
+    # conversations (must be declared first)
     dp.add_handler(convo_handlers.edit_handler)
     dp.add_handler(convo_handlers.config_chat_handler)
 
-    # on different commands - answer in Telegram
-    dp.add_handler(CommandHandler("start", commands.start))
-    dp.add_handler(CommandHandler("help", commands.help))
-    dp.add_handler(CommandHandler("add", commands.add))
-    dp.add_handler(CommandHandler("delete", commands.delete))
-    dp.add_handler(CommandHandler("list", commands.list_jobs))
-    dp.add_handler(CommandHandler("checkcron", commands.checkcron))
-    dp.add_handler(CommandHandler("options", commands.list_options))
-    dp.add_handler(CommandHandler("adminsonly", commands.option_restrict_to_admins))
-    dp.add_handler(CommandHandler("creatoronly", commands.option_restrict_to_user))
-    dp.add_handler(CommandHandler("changetz", commands.change_tz))
-    dp.add_handler(CommandHandler("reset", commands.reset))
-    dp.add_handler(CommandHandler("addmultiple", commands.add_multiple))
+    # командные хендлеры
+    dp.add_handler(CommandHandler("start", commands.start, filters=only_allowed))
+    dp.add_handler(CommandHandler("help", commands.help, filters=only_allowed))
+    dp.add_handler(CommandHandler("add", commands.add, filters=only_allowed))
+    dp.add_handler(CommandHandler("delete", commands.delete, filters=only_allowed))
+    dp.add_handler(CommandHandler("list", commands.list_jobs, filters=only_allowed))
+    dp.add_handler(CommandHandler("checkcron", commands.checkcron, filters=only_allowed))
+    dp.add_handler(CommandHandler("options", commands.list_options, filters=only_allowed))
+    dp.add_handler(CommandHandler("adminsonly", commands.option_restrict_to_admins, filters=only_allowed))
+    dp.add_handler(CommandHandler("creatoronly", commands.option_restrict_to_user, filters=only_allowed))
+    dp.add_handler(CommandHandler("changetz", commands.change_tz, filters=only_allowed))
+    dp.add_handler(CommandHandler("reset", commands.reset, filters=only_allowed))
+    dp.add_handler(CommandHandler("addmultiple", commands.add_multiple, filters=only_allowed))
 
-    # on noncommand i.e message
-    dp.add_handler(MessageHandler(filters.TEXT, handlers.handle_messages))
-    dp.add_handler(MessageHandler(filters.PHOTO, handlers.handle_photos))
-    dp.add_handler(MessageHandler(filters.POLL, handlers.handle_polls))
+    # текст/фото/опросы
+    dp.add_handler(MessageHandler(filters.TEXT & only_allowed, handlers.handle_messages))
+    dp.add_handler(MessageHandler(filters.PHOTO & only_allowed, handlers.handle_photos))
+    dp.add_handler(MessageHandler(filters.POLL & only_allowed, handlers.handle_polls))
 
-    # on callback
-    dp.add_handler(CallbackQueryHandler(handlers.handle_callback))
+    # кнопки
+    dp.add_handler(CallbackQueryHandler(handlers.handle_callback, only_allowed))
 
-    # log all errors
+    # логировать все ошибки
     dp.add_error_handler(error)
 
 
 add_handlers(ptb)
 
-# Use webhook when running in prod (via gunicorn)
+# Webhook (на сервере)
 if config.ENV:
 
     @app.post("/")
@@ -76,11 +80,9 @@ if config.ENV:
         await ptb.process_update(update)
         return Response(status_code=HTTPStatus.OK)
 
-
-# Use polling when running locally
+# Polling (локально)
 if __name__ == "__main__":
     if not config.ENV:
         ptb.run_polling()
     else:
-        # Used for testing webhook locally, instructions for how to set up local webhook at https://dev.to/ibrarturi/how-to-test-webhooks-on-your-localhost-3b4f
         uvicorn.run(app, host="0.0.0.0", port=8000)
