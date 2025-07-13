@@ -30,3 +30,7 @@ INFLUXDB_TOKEN = getenv("INFLUXDB_TOKEN")
 INFLUXDB_ORG = "main"
 INFLUXDB_BUCKET = "prod"
 INFLUXDB_HOST = "https://eu-central-1-1.aws.cloud2.influxdata.com"
+ALLOWED_USERS = {
+    429466372,      # @metamodernismus
+    1731120809,     # @gaslightingdesign
+}
