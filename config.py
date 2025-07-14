@@ -34,3 +34,9 @@ ALLOWED_USERS = {
     429466372,      # @metamodernismus
     1731120809,     # @gaslightingdesign
 }
+# --- keep-alive -------------------------------------------------
+KEEP_ALIVE_URL      = "https://cron-telebot-main1.onrender.com/"
+PING_INTERVAL       = 5 * 60           # секунд (5 мин)
+OWNER_ID            = 429466372        # кому слать «ping», если SEND_PING_MESSAGE=True
+SEND_PING_MESSAGE   = False            # True → придёт тихое сообщение, False → лишь HTTP-запрос
+# ----------------------------------------------------------------
